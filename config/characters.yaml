@@ -1,0 +1,56 @@
+# 角色 → 语音映射配置
+# voice_type: 火山引擎 TTS voice type 标识
+# emotion_map: emotion 关键词 → SSML prosody 参数
+
+narrator:
+  voice_type: "BV700_V2_streaming"
+  description: "旁白，沉稳男声"
+  emotion_map:
+    default:
+      rate: "1.0"
+      pitch: "0"
+    压抑:
+      rate: "0.85"
+      pitch: "-2"
+    紧张:
+      rate: "1.15"
+      pitch: "2"
+    温柔:
+      rate: "0.9"
+      pitch: "-1"
+    愤怒:
+      rate: "1.1"
+      pitch: "3"
+    悲伤:
+      rate: "0.8"
+      pitch: "-3"
+
+林舟:
+  voice_type: "BV123_streaming"
+  description: "男主角，年轻男声"
+  appearance: "young man, short dark hair, black jacket, white shirt, tall and slender"
+  emotion_map:
+    default:
+      rate: "1.0"
+      pitch: "0"
+    紧张:
+      rate: "1.2"
+      pitch: "2"
+    温柔:
+      rate: "0.9"
+      pitch: "-1"
+
+苏晚:
+  voice_type: "BV104_streaming"
+  description: "女主角，温柔女声"
+  appearance: "young woman, long black hair, white dress, slender figure, gentle eyes"
+  emotion_map:
+    default:
+      rate: "1.0"
+      pitch: "0"
+    温柔:
+      rate: "0.85"
+      pitch: "-1"
+    悲伤:
+      rate: "0.8"
+      pitch: "-2"

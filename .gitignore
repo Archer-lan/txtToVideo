@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+
+# 虚拟环境
+venv/
+.venv/
+env/
+
+# 生成的资源文件（体积大）
+assets/audio/
+assets/images/
+assets/video/
+assets/subtitles/
+assets/storyboard.json
+
+# 输出产物
+output/
+
+# 测试/缓存
+.pytest_cache/
+.hypothesis/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 工具配置
+.claude/
+
+# 系统文件
+.DS_Store
+Thumbs.db

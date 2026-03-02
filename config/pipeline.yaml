@@ -1,0 +1,110 @@
+# ============================================================
+# Pipeline 全局配置
+# 本文件定义了 AutoNovel2Video 管线各阶段的参数。
+# 管线流程：小说文本 → 分镜脚本 → 音频 → 图片 → 动画 → 视频合成 → 字幕
+# ============================================================
+
+# ----------------------------------------------------------
+# 小说下载配置（阶段 0：URL/书籍ID → 本地 TXT 文件）
+# 作用：根据用户输入的 URL 或书籍 ID，自动识别平台并下载小说文本。
+# 支持平台：番茄小说、起点中文网、笔趣阁等。
+# ----------------------------------------------------------
+download:
+  enabled: true                    # 是否启用下载阶段
+  output_dir: "input"              # 下载文件保存目录
+  output_format: "txt"             # 输出格式: txt
+  chapter_range:                   # 默认章节范围（可被命令行 --chapters 覆盖）
+    start: null                    # null = 从第一章开始
+    end: null                      # null = 到最后一章
+  timeout: 300                     # 单次下载超时（秒）
+  retry: 2                         # 下载失败重试次数
+  fanqie:                          # 番茄小说专用配置
+    timeout: 30                    # 单次请求超时（秒）
+
+# ----------------------------------------------------------
+# LLM 配置（阶段 1：小说文本 → 分镜脚本）
+# 作用：调用大语言模型将小说原文拆分为结构化的分镜脚本（storyboard.json），
+#       包含场景划分、情绪标注、画面描述、镜头类型等信息。
+# 接口：兼容 OpenAI Chat Completions 格式，可对接任何兼容接口。
+# ----------------------------------------------------------
+llm:
+  provider: "minimax"         # LLM 服务商标识（minimax = MiniMax）
+  model: "MiniMax-M2.1"    # 模型名（MiniMax-Text-01 / abab6.5s-chat 等）
+  base_url: "https://api.minimax.chat/v1"  # MiniMax OpenAI 兼容接口地址
+  api_key_env: "MINIMAX_API_KEY"  # API Key 对应的环境变量名
+  max_tokens: 4096            # 单次请求最大输出 token 数
+  temperature: 0.3            # 生成随机性（0.0=确定性高，1.0=创意性高，分镜任务建议 0.2-0.4）
+
+# ----------------------------------------------------------
+# TTS 配置（阶段 2：分镜脚本 → 有声朗读音频）
+# 作用：根据分镜脚本为每个场景生成语音朗读，支持多角色语音和情绪调节。
+# 引擎：火山引擎 TTS（字节跳动），不可用时自动降级为 edge-tts 或静音占位。
+# ----------------------------------------------------------
+tts:
+  provider: "volcano"
+  app_id_env: "VOLCANO_APP_ID"
+  access_token_env: "VOLCANO_ACCESS_TOKEN"
+  cluster: "volcano_tts"
+  sample_rate: 24000
+  format: "wav"
+  sentence_pause_ms: 500
+  paragraph_pause_ms: 1000
+
+# ----------------------------------------------------------
+# Stable Diffusion 配置（阶段 3：分镜脚本 → 关键画面）
+# ----------------------------------------------------------
+image:
+  provider: "sd_webui"
+  api_url: "http://127.0.0.1:7860"
+  style: "anime_cinematic"
+  batch_size: 1
+  timeout: 600
+  ip_adapter:
+    enabled: false
+    model: "ip-adapter-plus_sd15.safetensors"
+    weight: 0.6
+    reference_dir: "assets/reference_images"
+
+# ----------------------------------------------------------
+# 动画配置（阶段 4：图片 → Ken Burns 镜头运动动画）
+# ----------------------------------------------------------
+animation:
+  fps: 24
+  default_motion: "zoom_in"
+  motion_intensity: 0.05
+  motion_map:
+    wide: "zoom_in"
+    medium: "pan_right"
+    close: "zoom_in"
+    extreme_close: "zoom_out"
+    over_shoulder: "pan_left"
+    bird_eye: "zoom_in"
+
+# ----------------------------------------------------------
+# 视频合成配置（阶段 5）
+# ----------------------------------------------------------
+video:
+  resolution: [1024, 576]
+  fps: 24
+  codec: "libx264"
+  audio_codec: "aac"
+  bitrate: "4M"
+  transition: "crossfade"
+  transition_duration: 0.5
+
+# ----------------------------------------------------------
+# 字幕配置（阶段 6）
+# ----------------------------------------------------------
+subtitle:
+  whisper_model: "base"
+  language: "zh"
+  font: "Microsoft YaHei"
+  font_size: 20
+  margin_v: 30
+
+# ----------------------------------------------------------
+# 日志配置
+# ----------------------------------------------------------
+logging:
+  level: "INFO"
+  log_file: "output/pipeline.log"

@@ -1,0 +1,27 @@
+# AutoNovel2Video 依赖
+
+# 核心
+PyYAML>=6.0
+requests>=2.28.0
+
+# 小说下载 (阶段 0: URL → TXT)
+novel-downloader>=0.1.0           # 起点/笔趣阁等多站点下载
+
+# LLM (阶段 1: 文本解析)
+openai>=1.0.0
+
+# TTS (阶段 2: 火山引擎 fallback)
+edge-tts>=6.1.0
+
+# 图片生成 (阶段 3: 占位图)
+Pillow>=9.0.0
+
+# 字幕 (阶段 6: 可选 Whisper)
+# openai-whisper>=20230918  # 可选，需要 PyTorch
+
+# 注意：以下工具需要系统安装
+# - ffmpeg:
+#     macOS:   brew install ffmpeg
+#     Windows: winget install ffmpeg 或 choco install ffmpeg 或从 https://ffmpeg.org/download.html 下载
+#     Linux:   apt install ffmpeg
+# - Stable Diffusion WebUI: 本地部署（可选，不可用时自动生成占位图）

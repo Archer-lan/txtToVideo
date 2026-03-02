@@ -1,0 +1,53 @@
+# Stable Diffusion 画面风格配置
+
+default_style: "anime_cinematic"
+
+styles:
+  anime_cinematic:
+    positive_prefix: "masterpiece, best quality, ultra-detailed, anime style, cinematic composition, volumetric lighting, depth of field, detailed background, intricate details, sharp focus, professional illustration, studio quality"
+    negative_prompt: "lowres, bad anatomy, bad hands, text, words, letters, logo, title, caption, subtitle, writing, kanji, hiragana, alphabet, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry, deformed, disfigured, distorted face, asymmetric face, cross-eyed, ugly face, mutation, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra limbs, fused fingers, too many fingers, long neck, amateur, flat shading, simple background"
+    width: 768
+    height: 432
+    steps: 28
+    cfg_scale: 7.5
+    sampler: "DPM++ 2M Karras"
+
+  realistic_cinematic:
+    positive_prefix: "photorealistic, cinematic lighting, detailed, 8k, film grain, depth of field, bokeh, sharp focus, professional photography"
+    negative_prompt: "cartoon, anime, illustration, painting, drawing, lowres, bad anatomy, text, watermark, deformed, ugly, blurry"
+    width: 1024
+    height: 576
+    steps: 30
+    cfg_scale: 7
+    sampler: "DPM++ 2M Karras"
+
+  watercolor:
+    positive_prefix: "watercolor painting, soft colors, artistic, detailed, delicate brushstrokes"
+    negative_prompt: "photo, realistic, 3d, lowres, text, watermark, ugly, blurry"
+    width: 1024
+    height: 576
+    steps: 30
+    cfg_scale: 7
+    sampler: "DPM++ 2M Karras"
+
+# 镜头类型 → prompt 后缀
+shot_map:
+  wide: "wide angle establishing shot, full scene visible, environmental storytelling, cinematic framing"
+  medium: "medium shot, waist up, character focused, balanced composition"
+  close: "close-up portrait shot, detailed facial features, expressive eyes, shallow depth of field"
+  extreme_close: "extreme close-up, macro detail, dramatic focus, intense detail"
+  over_shoulder: "over the shoulder shot, depth perspective, foreground blur, narrative framing"
+  bird_eye: "bird's eye view, top down perspective, dramatic scale, overhead composition"
+
+# 情绪 → prompt 后缀
+emotion_map:
+  压抑: "dark oppressive atmosphere, moody, dim lighting, deep shadows, desaturated colors, heavy mood"
+  紧张: "dramatic lighting, high contrast, tense atmosphere, sharp shadows, dynamic composition, suspenseful"
+  温柔: "warm golden lighting, soft glow, gentle atmosphere, pastel tones, dreamy bokeh"
+  愤怒: "red tones, intense dramatic lighting, aggressive composition, harsh shadows, fiery atmosphere"
+  悲伤: "blue melancholic tones, rain, somber atmosphere, muted colors, lonely composition"
+  欢快: "bright vibrant colors, warm sunshine, cheerful atmosphere, lively composition, golden hour"
+  恐惧: "dark ominous shadows, eerie unsettling atmosphere, cold blue-green tones, fog, horror lighting"
+  平静: "serene tranquil atmosphere, natural soft lighting, peaceful composition, harmonious colors"
+  困惑: "hazy atmosphere, slightly desaturated, uncertain lighting, mixed warm and cool tones"
+  诡异: "uncanny atmosphere, distorted shadows, sickly green undertones, unsettling composition, surreal lighting"
