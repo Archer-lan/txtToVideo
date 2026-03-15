@@ -32,7 +32,7 @@ llm:
   model: "MiniMax-M2.1"    # 模型名（MiniMax-Text-01 / abab6.5s-chat 等）
   base_url: "https://api.minimax.chat/v1"  # MiniMax OpenAI 兼容接口地址
   api_key_env: "MINIMAX_API_KEY"  # API Key 对应的环境变量名
-  max_tokens: 4096            # 单次请求最大输出 token 数
+  max_tokens: 32768           # 单次请求最大输出 token 数
   temperature: 0.3            # 生成随机性（0.0=确定性高，1.0=创意性高，分镜任务建议 0.2-0.4）
 
 # ----------------------------------------------------------
@@ -56,13 +56,13 @@ tts:
 image:
   provider: "sd_webui"
   api_url: "http://127.0.0.1:7860"
-  style: "anime_cinematic"
+  style: "manga_comic"
   batch_size: 1
   timeout: 600
   ip_adapter:
-    enabled: false
-    model: "ip-adapter-plus_sd15.safetensors"
-    weight: 0.6
+    enabled: true
+    model: "ip-adapter-plus_sd15 [aaeca87a]"
+    weight: 0.5
     reference_dir: "assets/reference_images"
 
 # ----------------------------------------------------------
@@ -108,3 +108,28 @@ subtitle:
 logging:
   level: "INFO"
   log_file: "output/pipeline.log"
+
+# ----------------------------------------------------------
+# 工作区配置（章节化产物管理）
+# 作用：定义章节工作区的根目录和章节名模板。
+# ----------------------------------------------------------
+workspace:
+  root: "workspace"                    # 工作区根目录（相对于项目根目录）
+  chapter_name_template: "{stem}"      # 默认章节名模板，{stem} = 输入文件名（不含扩展名）
+
+# ----------------------------------------------------------
+# 清理配置（中间产物自动清理）
+# 作用：定义最终视频生成成功后，哪些中间产物应被删除。
+# ----------------------------------------------------------
+cleanup:
+  enabled: true                        # 是否启用自动清理
+  keep_patterns:                       # 保留文件模式（glob 格式，相对于章节工作区）
+    - "output/**"
+    - "subtitles/*.srt"
+    - "storyboard.json"
+    - "pipeline_state.json"
+  delete_patterns:                     # 删除文件模式
+    - "audio/scene_*.wav"
+    - "images/scene_*.png"
+    - "video/scene_*.mp4"
+    - "video/composed_no_sub.mp4"

@@ -1,56 +1,138 @@
 # 角色 → 语音映射配置
 # voice_type: 火山引擎 TTS voice type 标识
 # emotion_map: emotion 关键词 → SSML prosody 参数
+# appearance: 角色外观描述（用于 SD 生图 prompt 注入）
 
 narrator:
   voice_type: "BV700_V2_streaming"
   description: "旁白，沉稳男声"
   emotion_map:
     default:
-      rate: "1.0"
+      rate: "2.0"
       pitch: "0"
     压抑:
-      rate: "0.85"
+      rate: "2.0"
       pitch: "-2"
     紧张:
-      rate: "1.15"
+      rate: "2.0"
       pitch: "2"
     温柔:
-      rate: "0.9"
+      rate: "2.0"
       pitch: "-1"
     愤怒:
-      rate: "1.1"
+      rate: "2.0"
       pitch: "3"
     悲伤:
-      rate: "0.8"
+      rate: "2.0"
       pitch: "-3"
 
-林舟:
+齐夏:
   voice_type: "BV123_streaming"
   description: "男主角，年轻男声"
-  appearance: "young man, short dark hair, black jacket, white shirt, tall and slender"
+  appearance: "young man, short messy black hair, sharp eyes, lean build, dark casual clothes, determined expression"
   emotion_map:
     default:
-      rate: "1.0"
+      rate: "2.0"
       pitch: "0"
     紧张:
-      rate: "1.2"
+      rate: "2.0"
       pitch: "2"
     温柔:
-      rate: "0.9"
+      rate: "2.0"
       pitch: "-1"
 
-苏晚:
+甜甜:
   voice_type: "BV104_streaming"
-  description: "女主角，温柔女声"
-  appearance: "young woman, long black hair, white dress, slender figure, gentle eyes"
+  description: "女角色，甜美女声"
+  appearance: "young girl, long brown hair with bangs, big round eyes, cute face, pink hoodie, petite figure, cheerful expression"
   emotion_map:
     default:
-      rate: "1.0"
+      rate: "2.0"
       pitch: "0"
     温柔:
-      rate: "0.85"
+      rate: "2.0"
       pitch: "-1"
     悲伤:
-      rate: "0.8"
+      rate: "2.0"
       pitch: "-2"
+
+清冷女人:
+  voice_type: "BV104_streaming"
+  description: "冷淡女声"
+  appearance: "tall woman, long straight silver-white hair, cold sharp eyes, pale skin, black turtleneck, elegant and aloof"
+  emotion_map:
+    default:
+      rate: "2.0"
+      pitch: "-1"
+
+性感女孩:
+  voice_type: "BV104_streaming"
+  description: "成熟女声"
+  appearance: "attractive young woman, wavy red hair, confident smile, red lips, fitted black dress, alluring eyes"
+  emotion_map:
+    default:
+      rate: "2.0"
+      pitch: "0"
+
+花臂男:
+  voice_type: "BV123_streaming"
+  description: "粗犷男声"
+  appearance: "muscular man, tattoo sleeves on both arms, shaved head, tank top, intimidating look, rough face, stubble beard"
+  emotion_map:
+    default:
+      rate: "2.0"
+      pitch: "1"
+
+T恤男:
+  voice_type: "BV123_streaming"
+  description: "普通男声"
+  appearance: "average young man, plain white t-shirt, short brown hair, ordinary face, jeans, relaxed posture"
+  emotion_map:
+    default:
+      rate: "2.0"
+      pitch: "0"
+
+白大褂:
+  voice_type: "BV700_V2_streaming"
+  description: "沉稳男声"
+  appearance: "middle-aged man, white lab coat, glasses, neat combed hair, serious expression, holding clipboard"
+  emotion_map:
+    default:
+      rate: "2.0"
+      pitch: "-1"
+
+健硕男人:
+  voice_type: "BV123_streaming"
+  description: "低沉男声"
+  appearance: "tall muscular man, broad shoulders, short dark hair, strong jawline, black shirt, imposing figure"
+  emotion_map:
+    default:
+      rate: "2.0"
+      pitch: "1"
+
+健硕年轻人:
+  voice_type: "BV123_streaming"
+  description: "年轻男声"
+  appearance: "young athletic man, muscular build, spiky dark hair, sportswear, energetic expression"
+  emotion_map:
+    default:
+      rate: "2.0"
+      pitch: "1"
+
+山羊头:
+  voice_type: "BV700_V2_streaming"
+  description: "阴沉男声"
+  appearance: "mysterious figure, goat mask covering face, dark hooded robe, tall and thin, eerie presence"
+  emotion_map:
+    default:
+      rate: "2.0"
+      pitch: "-2"
+
+人羊:
+  voice_type: "BV700_V2_streaming"
+  description: "低沉怪异声"
+  appearance: "humanoid figure with sheep-like features, white wool-like hair, unsettling pale eyes, hunched posture, tattered clothes"
+  emotion_map:
+    default:
+      rate: "2.0"
+      pitch: "-3"

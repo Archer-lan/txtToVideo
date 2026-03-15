@@ -18,12 +18,27 @@ import sys
 import re
 import logging
 import yaml
+import chardet
 from pathlib import Path
 from openai import OpenAI
 
 logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+
+def detect_file_encoding(file_path):
+    """自动检测文件编码"""
+    with open(file_path, 'rb') as f:
+        raw_data = f.read(100000)  # 读取前100KB用于检测
+        result = chardet.detect(raw_data)
+        encoding = result.get('encoding', 'utf-8')
+        confidence = result.get('confidence', 0)
+        logger.info(f"检测到文件编码: {encoding} (置信度: {confidence:.2%})")
+        # 如果置信度较低，默认为utf-8
+        if confidence < 0.7:
+            return 'utf-8'
+        return encoding
 
 SYSTEM_PROMPT = """你是一个专业的影视分镜脚本师。你的任务是将小说文本转换为分镜脚本。
 
@@ -72,7 +87,7 @@ def create_llm_client(config):
     return OpenAI(api_key=api_key, base_url=base_url)
 
 
-def split_text_chunks(text, max_chars=2000):
+def split_text_chunks(text, max_chars=1500):
     """将长文本按段落分割为合适大小的块"""
     paragraphs = [p.strip() for p in text.split("\n") if p.strip()]
     chunks = []
@@ -163,7 +178,9 @@ def parse_story(input_path, output_path=None):
         output_path = Path(output_path)
 
     logger.info(f"读取小说文本: {input_path}")
-    with open(input_path, "r", encoding="utf-8") as f:
+    # 自动检测文件编码
+    file_encoding = detect_file_encoding(input_path)
+    with open(input_path, "r", encoding=file_encoding) as f:
         text = f.read()
 
     config = load_config()

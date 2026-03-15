@@ -3,6 +3,7 @@
 # 核心
 PyYAML>=6.0
 requests>=2.28.0
+chardet>=5.0.0  # 自动检测文件编码
 
 # 小说下载 (阶段 0: URL → TXT)
 novel-downloader>=0.1.0           # 起点/笔趣阁等多站点下载

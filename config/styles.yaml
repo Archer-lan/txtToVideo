@@ -4,13 +4,35 @@ default_style: "anime_cinematic"
 
 styles:
   anime_cinematic:
-    positive_prefix: "masterpiece, best quality, ultra-detailed, anime style, cinematic composition, volumetric lighting, depth of field, detailed background, intricate details, sharp focus, professional illustration, studio quality"
-    negative_prompt: "lowres, bad anatomy, bad hands, text, words, letters, logo, title, caption, subtitle, writing, kanji, hiragana, alphabet, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry, deformed, disfigured, distorted face, asymmetric face, cross-eyed, ugly face, mutation, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra limbs, fused fingers, too many fingers, long neck, amateur, flat shading, simple background"
+    positive_prefix: "masterpiece, best quality, ultra-detailed, anime style, cinematic composition, volumetric lighting, depth of field, detailed background, intricate details, sharp focus, professional illustration, studio quality, detailed face, symmetric face, beautiful detailed eyes, correct anatomy"
+    negative_prompt: "lowres, bad anatomy, bad hands, text, words, letters, logo, title, caption, subtitle, writing, kanji, hiragana, alphabet, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry, deformed, disfigured, distorted face, asymmetric face, cross-eyed, ugly face, mutation, ugly, duplicate, morbid, mutilated, poorly drawn face, poorly drawn hands, extra limbs, fused fingers, too many fingers, long neck, amateur, flat shading, simple background, bad face, mangled face, extra faces, deformed eyes, bad eyes, cloned face, fused face, malformed face"
     width: 768
     height: 432
     steps: 28
     cfg_scale: 7.5
     sampler: "DPM++ 2M Karras"
+    # Hires.fix: 先低分辨率生成再放大，大幅改善人脸细节
+    hires_fix:
+      enabled: true
+      scale: 1.5          # 放大 1.5 倍（768x432 → 1152x648）
+      upscaler: "R-ESRGAN 4x+ Anime6B"  # 动漫专用放大器
+      denoising_strength: 0.3   # 放大时的重绘强度，0.3 保持构图稳定
+      steps: 15            # 放大阶段步数
+
+  manga_comic:
+    positive_prefix: "manga style, comic book art, bold ink outlines, cel shading, screentone shading, high contrast black and white with color accents, dynamic panel composition, expressive characters, detailed face, symmetric face, beautiful detailed eyes, correct anatomy, sharp linework, professional manga illustration, clean lines"
+    negative_prompt: "lowres, bad anatomy, bad hands, text, words, letters, logo, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, jpeg artifacts, signature, watermark, blurry, deformed, disfigured, distorted face, asymmetric face, cross-eyed, ugly face, mutation, ugly, duplicate, poorly drawn face, poorly drawn hands, extra limbs, fused fingers, too many fingers, long neck, photorealistic, 3d render, bad face, mangled face, extra faces, deformed eyes, bad eyes, cloned face, fused face, malformed face"
+    width: 768
+    height: 432
+    steps: 28
+    cfg_scale: 7.5
+    sampler: "DPM++ 2M Karras"
+    hires_fix:
+      enabled: true
+      scale: 1.5
+      upscaler: "R-ESRGAN 4x+ Anime6B"
+      denoising_strength: 0.3
+      steps: 15
 
   realistic_cinematic:
     positive_prefix: "photorealistic, cinematic lighting, detailed, 8k, film grain, depth of field, bokeh, sharp focus, professional photography"

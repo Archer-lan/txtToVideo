@@ -91,31 +91,54 @@ def generate_image_sd(positive, negative, style_config, api_url, timeout=120, ip
         "sampler_name": style_config["sampler"],
         "batch_size": 1,
         "n_iter": 1,
-        "restore_faces": True,
+        "restore_faces": False,  # 关闭内置 CodeFormer，交给 ADetailer 处理更精准
     }
 
+    # Hires.fix: 先低分辨率生成再放大，显著改善人脸细节
+    hires_config = style_config.get("hires_fix", {})
+    if hires_config.get("enabled", False):
+        payload["enable_hr"] = True
+        payload["hr_scale"] = hires_config.get("scale", 1.5)
+        payload["hr_upscaler"] = hires_config.get("upscaler", "R-ESRGAN 4x+ Anime6B")
+        payload["denoising_strength"] = hires_config.get("denoising_strength", 0.3)
+        payload["hr_second_pass_steps"] = hires_config.get("steps", 15)
+
     # ADetailer: 自动检测并高清重绘人脸和手部
+    # 使用更强的检测模型和更高的重绘强度来修复人脸扭曲
+    face_prompt = f"(detailed face, symmetric face, correct anatomy, beautiful eyes, detailed eyes), {positive}"
+    face_neg = f"(deformed face, asymmetric face, distorted face, bad eyes, cross-eyed, ugly face, extra faces, mutated face), {negative}"
+
     adetailer_args = {
         "args": [
             True,   # ad_enable
             False,  # skip_img2img
             {
-                "ad_model": "face_yolov8n.pt",
-                "ad_prompt": positive,
-                "ad_negative_prompt": negative,
+                "ad_model": "face_yolov8s.pt",  # 升级到 small 模型，检测更准确
+                "ad_prompt": face_prompt,
+                "ad_negative_prompt": face_neg,
                 "ad_confidence": 0.3,
-                "ad_denoising_strength": 0.4,
+                "ad_denoising_strength": 0.45,  # 适度提高重绘强度
                 "ad_inpaint_only_masked": True,
-                "ad_inpaint_only_masked_padding": 32,
+                "ad_inpaint_only_masked_padding": 64,  # 增大 padding，提供更多上下文
+                "ad_mask_blur": 8,  # 柔化遮罩边缘，避免修复痕迹
+                "ad_inpaint_width": 512,  # 人脸区域放大到 512px 重绘
+                "ad_inpaint_height": 512,
+                "ad_use_inpaint_width_height": True,
+                "ad_cfg_scale": 7.0,
+                "ad_steps": style_config["steps"],  # 与主图相同步数
             },
             {
-                "ad_model": "hand_yolov8n.pt",
-                "ad_prompt": positive,
-                "ad_negative_prompt": negative,
+                "ad_model": "hand_yolov8n.pt",  # nano 模型（环境中可用的版本）
+                "ad_prompt": f"(detailed hands, correct fingers, five fingers), {positive}",
+                "ad_negative_prompt": f"(bad hands, extra fingers, missing fingers, fused fingers, too many fingers), {negative}",
                 "ad_confidence": 0.3,
-                "ad_denoising_strength": 0.4,
+                "ad_denoising_strength": 0.45,
                 "ad_inpaint_only_masked": True,
-                "ad_inpaint_only_masked_padding": 32,
+                "ad_inpaint_only_masked_padding": 64,
+                "ad_mask_blur": 8,
+                "ad_inpaint_width": 512,
+                "ad_inpaint_height": 512,
+                "ad_use_inpaint_width_height": True,
             },
         ]
     }
@@ -150,6 +173,17 @@ def generate_image_sd(positive, negative, style_config, api_url, timeout=120, ip
         json=payload,
         timeout=timeout,
     )
+
+    # 如果 IP-Adapter 导致 422，自动降级重试（不带 IP-Adapter）
+    if response.status_code == 422 and "controlnet" in payload.get("alwayson_scripts", {}):
+        logger.warning("IP-Adapter 导致 422，降级重试（不带 IP-Adapter）")
+        payload["alwayson_scripts"].pop("controlnet")
+        response = requests.post(
+            f"{api_url}/sdapi/v1/txt2img",
+            json=payload,
+            timeout=timeout,
+        )
+
     response.raise_for_status()
 
     result = response.json()

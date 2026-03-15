@@ -17,6 +17,7 @@ import logging
 import yaml
 import wave
 from pathlib import Path
+from scripts.platform_utils import FFMPEG, FFPROBE
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ def get_audio_duration(audio_path):
         try:
             result = subprocess.run(
                 [
-                    "ffprobe", "-v", "quiet",
+                    FFPROBE, "-v", "quiet",
                     "-show_entries", "format=duration",
                     "-of", "default=noprint_wrappers=1:nokey=1",
                     str(audio_path),
@@ -119,7 +120,7 @@ def animate_image_ffmpeg(image_path, output_path, duration, motion_type, intensi
     )
 
     cmd = [
-        "ffmpeg", "-y",
+        FFMPEG, "-y",
         "-loop", "1",
         "-i", str(image_path),
         "-vf", filter_complex,
@@ -235,7 +236,7 @@ def animate_all_images(storyboard_path=None, audio_dir=None, image_dir=None, out
             logger.error(f"  动画生成失败: {e}")
             # 降级：直接将静态图片作为视频
             cmd = [
-                "ffmpeg", "-y",
+                FFMPEG, "-y",
                 "-loop", "1", "-i", str(image_path),
                 "-t", str(duration),
                 "-vf", f"scale={resolution[0]}:{resolution[1]}",

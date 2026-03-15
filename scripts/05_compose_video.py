@@ -15,6 +15,7 @@ import logging
 import yaml
 import tempfile
 from pathlib import Path
+from scripts.platform_utils import FFMPEG, FFPROBE
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ def load_config():
 def merge_audio_video_scene(video_path, audio_path, output_path):
     """合并单个场景的音频和视频，以音频时长为准"""
     cmd = [
-        "ffmpeg", "-y",
+        FFMPEG, "-y",
         "-i", str(video_path),
         "-i", str(audio_path),
         "-c:v", "copy",
@@ -71,7 +72,7 @@ def concat_simple(video_files, output_path):
             f.write(f"file '{vf.resolve().as_posix()}'\n")
 
     cmd = [
-        "ffmpeg", "-y",
+        FFMPEG, "-y",
         "-f", "concat",
         "-safe", "0",
         "-i", str(list_file),
@@ -106,7 +107,7 @@ def concat_with_crossfade(video_files, output_path, fade_duration, video_config)
     for vf in video_files:
         result = subprocess.run(
             [
-                "ffprobe", "-v", "quiet",
+                FFPROBE, "-v", "quiet",
                 "-show_entries", "format=duration",
                 "-of", "default=noprint_wrappers=1:nokey=1",
                 str(vf),
@@ -129,7 +130,7 @@ def concat_with_crossfade(video_files, output_path, fade_duration, video_config)
             f"[0:a][1:a]acrossfade=d={fade_duration}[outa]"
         )
         cmd = [
-            "ffmpeg", "-y",
+            FFMPEG, "-y",
             "-i", str(video_files[0]),
             "-i", str(video_files[1]),
             "-filter_complex", filter_complex,
@@ -162,7 +163,7 @@ def concat_with_crossfade(video_files, output_path, fade_duration, video_config)
                 # 获取第一个文件时长
                 r = subprocess.run(
                     [
-                        "ffprobe", "-v", "quiet",
+                        FFPROBE, "-v", "quiet",
                         "-show_entries", "format=duration",
                         "-of", "default=noprint_wrappers=1:nokey=1",
                         str(current_files[i]),
@@ -180,7 +181,7 @@ def concat_with_crossfade(video_files, output_path, fade_duration, video_config)
                     f"[0:a][1:a]acrossfade=d={fade_duration}[outa]"
                 )
                 cmd = [
-                    "ffmpeg", "-y",
+                    FFMPEG, "-y",
                     "-i", str(current_files[i]),
                     "-i", str(current_files[i + 1]),
                     "-filter_complex", filter_complex,

@@ -3,7 +3,9 @@
 集中管理所有平台相关的差异逻辑，为各阶段脚本提供统一的跨平台接口。
 """
 
+import os
 import platform
+import shutil
 import signal
 import threading
 from pathlib import Path
@@ -12,6 +14,40 @@ from pathlib import Path
 def is_windows() -> bool:
     """检测当前是否为 Windows 平台"""
     return platform.system() == "Windows"
+
+
+def find_ffmpeg() -> str:
+    """查找 ffmpeg 可执行文件路径"""
+    path = shutil.which("ffmpeg")
+    if path:
+        return path
+    if is_windows():
+        for candidate in [
+            os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-8.0.1-full_build\bin\ffmpeg.exe"),
+            r"C:\ffmpeg\bin\ffmpeg.exe",
+            r"C:\ProgramData\chocolatey\bin\ffmpeg.exe",
+        ]:
+            if os.path.isfile(candidate):
+                return candidate
+    return "ffmpeg"
+
+
+def find_ffprobe() -> str:
+    """查找 ffprobe 可执行文件路径"""
+    path = shutil.which("ffprobe")
+    if path:
+        return path
+    # 尝试从 ffmpeg 同目录找
+    ffmpeg_path = find_ffmpeg()
+    if ffmpeg_path != "ffmpeg":
+        ffprobe_candidate = os.path.join(os.path.dirname(ffmpeg_path), "ffprobe.exe" if is_windows() else "ffprobe")
+        if os.path.isfile(ffprobe_candidate):
+            return ffprobe_candidate
+    return "ffprobe"
+
+
+FFMPEG = find_ffmpeg()
+FFPROBE = find_ffprobe()
 
 
 def get_default_font_path() -> str:

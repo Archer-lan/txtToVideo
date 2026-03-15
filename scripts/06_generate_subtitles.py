@@ -13,7 +13,7 @@ import logging
 import yaml
 from pathlib import Path
 
-from scripts.platform_utils import get_ffmpeg_subtitle_path
+from scripts.platform_utils import get_ffmpeg_subtitle_path, FFMPEG, FFPROBE
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ def generate_srt_from_storyboard(storyboard_path, audio_dir, output_srt_path):
                 try:
                     result = subprocess.run(
                         [
-                            "ffprobe", "-v", "quiet",
+                            FFPROBE, "-v", "quiet",
                             "-show_entries", "format=duration",
                             "-of", "default=noprint_wrappers=1:nokey=1",
                             str(audio_path),
@@ -163,7 +163,7 @@ def burn_subtitles(video_path, srt_path, output_path, config):
     subtitle_filter = f"subtitles={srt_escaped}:force_style='{force_style}'"
 
     cmd = [
-        "ffmpeg", "-y",
+        FFMPEG, "-y",
         "-i", str(video_path),
         "-vf", subtitle_filter,
         "-c:v", "libx264",
@@ -185,7 +185,7 @@ def burn_subtitles(video_path, srt_path, output_path, config):
         shutil.copy2(srt_path, temp_srt)
 
         cmd_simple = [
-            "ffmpeg", "-y",
+            FFMPEG, "-y",
             "-i", str(video_path),
             "-vf", f"subtitles=subs.srt",
             "-c:v", "libx264",

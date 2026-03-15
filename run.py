@@ -9,6 +9,9 @@ AutoNovel2Video - 一键执行管线
     python run.py input/chapter01.txt --whisper       # 使用 Whisper 生成字幕
     python run.py "https://fanqienovel.com/page/123456" --chapters 1-10  # 从番茄小说下载
     python run.py 7143038691944959011  # 通过书籍 ID 下载（默认番茄小说）
+    python run.py input/chapter01.txt --resume workspace/chapter01  # 从断点恢复
+    python run.py input/chapter01.txt --keep-artifacts  # 保留中间产物
+    python run.py --migrate chapter01  # 迁移旧 assets/ 产物到章节工作区
 """
 
 import argparse
@@ -20,7 +23,10 @@ import time
 import traceback
 from pathlib import Path
 
-import yaml
+from scripts.cleanup import ArtifactCleaner
+from scripts.config_manager import ConfigManager
+from scripts.migrate import migrate_assets_to_workspace
+from scripts.pipeline_context import PipelineContext
 
 # 项目根目录
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -97,6 +103,8 @@ def main():
     parser.add_argument(
         "input",
         type=str,
+        nargs="?",
+        default=None,
         help="输入的小说文本文件路径 (.txt / .md) / URL / 书籍ID",
     )
     parser.add_argument(
@@ -141,15 +149,50 @@ def main():
         action="store_true",
         help="使用 Whisper 生成字幕（默认使用 storyboard 方案）",
     )
+    parser.add_argument(
+        "--resume",
+        type=str,
+        default=None,
+        metavar="CHAPTER_DIR",
+        help="从章节工作区状态文件恢复，跳过已完成步骤",
+    )
+    parser.add_argument(
+        "--keep-artifacts",
+        action="store_true",
+        help="跳过清理步骤，保留所有中间产物",
+    )
+    parser.add_argument(
+        "--migrate",
+        type=str,
+        default=None,
+        metavar="CHAPTER_NAME",
+        help="将 assets/ 目录下的旧产物迁移到指定章节工作区",
+    )
 
     args = parser.parse_args()
 
     # 加载配置
-    config_path = PROJECT_ROOT / "config" / "pipeline.yaml"
-    with open(config_path, "r", encoding="utf-8") as f:
-        config = yaml.safe_load(f)
+    cfg = ConfigManager()
+    config = cfg.pipeline
+
+    # --migrate: 迁移旧产物并退出
+    if args.migrate:
+        ws_config = config.get("workspace", {})
+        workspace_root = PROJECT_ROOT / Path(ws_config.get("root", "workspace"))
+        assets_dir = PROJECT_ROOT / "assets"
+        chapter_dir = migrate_assets_to_workspace(
+            chapter_name=args.migrate,
+            assets_dir=assets_dir,
+            workspace_root=workspace_root,
+        )
+        print(f"迁移完成! 章节工作区: {chapter_dir}")
+        sys.exit(0)
 
     download_config = config.get("download", {})
+
+    # input 参数在非 --migrate 模式下必须提供
+    if args.input is None:
+        parser.error("请提供输入文件路径、URL 或书籍ID")
 
     # 判断输入类型（内联判断，避免提前加载 00_download_novel.py 导致 requests 库干扰 httpx）
     _input = args.input.strip()
@@ -192,32 +235,44 @@ def main():
             print(f"错误: 输入文件不存在: {input_path}")
             sys.exit(1)
 
+    # 创建 PipelineContext（在 input_path 确定之后）
+    if args.resume:
+        # --resume: 从状态文件恢复上下文
+        chapter_dir = Path(args.resume).resolve()
+        ctx = PipelineContext.restore(chapter_dir, cfg)
+    else:
+        chapter_name = input_path.stem
+        ctx = PipelineContext(chapter_name=chapter_name, config_manager=cfg)
+
     # 确定输出路径
     if args.output:
         output_path = Path(args.output).resolve()
     else:
-        output_path = PROJECT_ROOT / "output" / f"{input_path.stem}.mp4"
+        output_path = ctx.output_dir / f"{input_path.stem}.mp4"
 
     # 设置日志
-    log_file = PROJECT_ROOT / "output" / "pipeline.log"
+    log_file = ctx.output_dir / "pipeline.log"
     setup_logging(log_file)
 
     logger = logging.getLogger("pipeline")
     logger.info(f"AutoNovel2Video Pipeline 启动")
     logger.info(f"输入: {input_path}")
     logger.info(f"输出: {output_path}")
+    logger.info(f"章节工作区: {ctx.chapter_dir}")
 
     pipeline_start = time.time()
 
-    # 中间产物路径
-    storyboard_path = PROJECT_ROOT / "assets" / "storyboard.json"
-    audio_dir = PROJECT_ROOT / "assets" / "audio"
-    image_dir = PROJECT_ROOT / "assets" / "images"
-    video_dir = PROJECT_ROOT / "assets" / "video"
-    composed_video = PROJECT_ROOT / "assets" / "video" / "composed_no_sub.mp4"
+    # 中间产物路径（从 PipelineContext 获取）
+    storyboard_path = ctx.storyboard_path
+    audio_dir = ctx.audio_dir
+    image_dir = ctx.images_dir
+    video_dir = ctx.video_dir
+    composed_video = ctx.video_dir / "composed_no_sub.mp4"
 
     # ========== 阶段 1: 文本 → 分镜脚本 ==========
-    if not args.skip_parse:
+    if args.resume and ctx.is_step_complete("parse"):
+        logger.info("跳过阶段 1 (已完成 --resume)")
+    elif not args.skip_parse:
         mod = load_script("01_parse_story.py")
         run_step(
             "阶段 1: 小说 → 分镜脚本",
@@ -225,11 +280,14 @@ def main():
             input_path,
             storyboard_path,
         )
+        ctx.mark_step_complete("parse", [storyboard_path])
     else:
         logger.info("跳过阶段 1 (--skip-parse)")
 
     # ========== 阶段 2: 分镜 → 音频 ==========
-    if not args.skip_audio:
+    if args.resume and ctx.is_step_complete("audio"):
+        logger.info("跳过阶段 2 (已完成 --resume)")
+    elif not args.skip_audio:
         mod = load_script("02_generate_audio.py")
         run_step(
             "阶段 2: 分镜 → 有声朗读",
@@ -237,11 +295,15 @@ def main():
             storyboard_path,
             audio_dir,
         )
+        audio_artifacts = list(audio_dir.glob("*.wav"))
+        ctx.mark_step_complete("audio", audio_artifacts)
     else:
         logger.info("跳过阶段 2 (--skip-audio)")
 
     # ========== 阶段 3: 分镜 → 图片 ==========
-    if not args.skip_images:
+    if args.resume and ctx.is_step_complete("images"):
+        logger.info("跳过阶段 3 (已完成 --resume)")
+    elif not args.skip_images:
         mod = load_script("03_generate_images.py")
         run_step(
             "阶段 3: 分镜 → 关键画面",
@@ -249,11 +311,15 @@ def main():
             storyboard_path,
             image_dir,
         )
+        image_artifacts = list(image_dir.glob("*.png"))
+        ctx.mark_step_complete("images", image_artifacts)
     else:
         logger.info("跳过阶段 3 (--skip-images)")
 
     # ========== 阶段 4: 图片 → 动画 ==========
-    if not args.skip_animate:
+    if args.resume and ctx.is_step_complete("animate"):
+        logger.info("跳过阶段 4 (已完成 --resume)")
+    elif not args.skip_animate:
         mod = load_script("04_animate_images.py")
         run_step(
             "阶段 4: 图片 → 动画",
@@ -263,31 +329,46 @@ def main():
             image_dir,
             video_dir,
         )
+        animate_artifacts = list(video_dir.glob("scene_*.mp4"))
+        ctx.mark_step_complete("animate", animate_artifacts)
     else:
         logger.info("跳过阶段 4 (--skip-animate)")
 
     # ========== 阶段 5: 音画合成 ==========
-    mod = load_script("05_compose_video.py")
-    run_step(
-        "阶段 5: 音画合成",
-        mod.compose_video,
-        storyboard_path,
-        audio_dir,
-        video_dir,
-        composed_video,
-    )
+    if args.resume and ctx.is_step_complete("compose"):
+        logger.info("跳过阶段 5 (已完成 --resume)")
+    else:
+        mod = load_script("05_compose_video.py")
+        run_step(
+            "阶段 5: 音画合成",
+            mod.compose_video,
+            storyboard_path,
+            audio_dir,
+            video_dir,
+            composed_video,
+        )
+        ctx.mark_step_complete("compose", [composed_video])
 
     # ========== 阶段 6: 字幕生成 & 烧录 ==========
-    mod = load_script("06_generate_subtitles.py")
-    run_step(
-        "阶段 6: 字幕生成 & 烧录",
-        mod.generate_subtitles,
-        storyboard_path,
-        audio_dir,
-        composed_video,
-        output_path,
-        args.whisper,
-    )
+    if args.resume and ctx.is_step_complete("subtitles"):
+        logger.info("跳过阶段 6 (已完成 --resume)")
+    else:
+        mod = load_script("06_generate_subtitles.py")
+        run_step(
+            "阶段 6: 字幕生成 & 烧录",
+            mod.generate_subtitles,
+            storyboard_path,
+            audio_dir,
+            composed_video,
+            output_path,
+            args.whisper,
+        )
+        ctx.mark_step_complete("subtitles", [output_path])
+
+    # ========== 清理中间产物 ==========
+    if not args.keep_artifacts:
+        cleaner = ArtifactCleaner(ctx)
+        cleaner.clean()
 
     # 完成
     total_time = time.time() - pipeline_start

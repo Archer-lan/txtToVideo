@@ -197,7 +197,7 @@ def generate_audio_fallback(text, voice_type, prosody, config, output_path):
         voice_map = {
             "BV700_V2_streaming": "zh-CN-YunxiNeural",
             "BV123_streaming": "zh-CN-YunxiNeural",
-            "BV104_streaming": "zh-CN-XiaoxiaoNeural",
+            "BV104_streaming": "zh-CN-XiaoyiNeural",
         }
         voice = voice_map.get(voice_type, "zh-CN-YunxiNeural")
         rate = prosody.get("rate", "1.0")
