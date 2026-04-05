@@ -14,28 +14,22 @@ venv/
 env/
 
 # 生成的资源文件（体积大）
-assets/audio/
-assets/images/
-assets/video/
-assets/subtitles/
-assets/reference_images/
-assets/storyboard.json
-
-# 输出产物
-output/
+assets/
 workspace/
+output/
 
 # 输入小说原文（版权内容，不提交）
-input/十日终焉/
-input/*.txt
+input/
 
 # 测试/缓存
 .pytest_cache/
 .hypothesis/
 
-# IDE
+# IDE / 工具配置
 .vscode/
 .idea/
+.claude/
+.kiro/
 *.swp
 *.swo
 *~
@@ -43,12 +37,12 @@ input/*.txt
 # 环境变量（含密钥）
 .env
 
-# 工具配置
-.claude/
-
 # 系统文件
 .DS_Store
 Thumbs.db
 
-# 外部工具（不提交到仓库）
+# 外部工具
 stable-diffusion-webui/
+
+# 旧脚本（已合并到 run_batch.py）
+run_all_chapters.ps1

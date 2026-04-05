@@ -63,7 +63,7 @@ image:
     enabled: true
     model: "ip-adapter-plus_sd15 [aaeca87a]"
     weight: 0.5
-    reference_dir: "assets/reference_images"
+    reference_dir: "workspace/reference_images"
   img2img:
     enabled: true                  # 启用 img2img 链式生图（连续场景用前图做参考）
 
