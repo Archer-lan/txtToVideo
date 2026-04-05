@@ -8,22 +8,22 @@ narrator:
   description: "旁白，沉稳男声"
   emotion_map:
     default:
-      rate: "2.0"
+      rate: "1.5"
       pitch: "0"
     压抑:
-      rate: "2.0"
+      rate: "1.5"
       pitch: "-2"
     紧张:
-      rate: "2.0"
+      rate: "1.5"
       pitch: "2"
     温柔:
-      rate: "2.0"
+      rate: "1.5"
       pitch: "-1"
     愤怒:
-      rate: "2.0"
+      rate: "1.5"
       pitch: "3"
     悲伤:
-      rate: "2.0"
+      rate: "1.5"
       pitch: "-3"
 
 齐夏:
@@ -32,13 +32,13 @@ narrator:
   appearance: "young man, short messy black hair, sharp eyes, lean build, dark casual clothes, determined expression"
   emotion_map:
     default:
-      rate: "2.0"
+      rate: "1.5"
       pitch: "0"
     紧张:
-      rate: "2.0"
+      rate: "1.5"
       pitch: "2"
     温柔:
-      rate: "2.0"
+      rate: "1.5"
       pitch: "-1"
 
 甜甜:
@@ -47,13 +47,13 @@ narrator:
   appearance: "young girl, long brown hair with bangs, big round eyes, cute face, pink hoodie, petite figure, cheerful expression"
   emotion_map:
     default:
-      rate: "2.0"
+      rate: "1.5"
       pitch: "0"
     温柔:
-      rate: "2.0"
+      rate: "1.5"
       pitch: "-1"
     悲伤:
-      rate: "2.0"
+      rate: "1.5"
       pitch: "-2"
 
 清冷女人:
@@ -62,7 +62,7 @@ narrator:
   appearance: "tall woman, long straight silver-white hair, cold sharp eyes, pale skin, black turtleneck, elegant and aloof"
   emotion_map:
     default:
-      rate: "2.0"
+      rate: "1.5"
       pitch: "-1"
 
 性感女孩:
@@ -71,7 +71,7 @@ narrator:
   appearance: "attractive young woman, wavy red hair, confident smile, red lips, fitted black dress, alluring eyes"
   emotion_map:
     default:
-      rate: "2.0"
+      rate: "1.5"
       pitch: "0"
 
 花臂男:
@@ -80,7 +80,7 @@ narrator:
   appearance: "muscular man, tattoo sleeves on both arms, shaved head, tank top, intimidating look, rough face, stubble beard"
   emotion_map:
     default:
-      rate: "2.0"
+      rate: "1.5"
       pitch: "1"
 
 T恤男:
@@ -89,7 +89,7 @@ T恤男:
   appearance: "average young man, plain white t-shirt, short brown hair, ordinary face, jeans, relaxed posture"
   emotion_map:
     default:
-      rate: "2.0"
+      rate: "1.5"
       pitch: "0"
 
 白大褂:
@@ -98,7 +98,7 @@ T恤男:
   appearance: "middle-aged man, white lab coat, glasses, neat combed hair, serious expression, holding clipboard"
   emotion_map:
     default:
-      rate: "2.0"
+      rate: "1.5"
       pitch: "-1"
 
 健硕男人:
@@ -107,7 +107,7 @@ T恤男:
   appearance: "tall muscular man, broad shoulders, short dark hair, strong jawline, black shirt, imposing figure"
   emotion_map:
     default:
-      rate: "2.0"
+      rate: "1.5"
       pitch: "1"
 
 健硕年轻人:
@@ -116,7 +116,7 @@ T恤男:
   appearance: "young athletic man, muscular build, spiky dark hair, sportswear, energetic expression"
   emotion_map:
     default:
-      rate: "2.0"
+      rate: "1.5"
       pitch: "1"
 
 山羊头:
@@ -125,7 +125,7 @@ T恤男:
   appearance: "mysterious figure, goat mask covering face, dark hooded robe, tall and thin, eerie presence"
   emotion_map:
     default:
-      rate: "2.0"
+      rate: "1.5"
       pitch: "-2"
 
 人羊:
@@ -134,5 +134,5 @@ T恤男:
   appearance: "humanoid figure with sheep-like features, white wool-like hair, unsettling pale eyes, hunched posture, tattered clothes"
   emotion_map:
     default:
-      rate: "2.0"
+      rate: "1.5"
       pitch: "-3"

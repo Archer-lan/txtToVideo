@@ -64,6 +64,8 @@ image:
     model: "ip-adapter-plus_sd15 [aaeca87a]"
     weight: 0.5
     reference_dir: "assets/reference_images"
+  img2img:
+    enabled: true                  # 启用 img2img 链式生图（连续场景用前图做参考）
 
 # ----------------------------------------------------------
 # 动画配置（阶段 4：图片 → Ken Burns 镜头运动动画）
@@ -100,6 +102,9 @@ subtitle:
   language: "zh"
   font: "Microsoft YaHei"
   font_size: 20
+  font_color: "yellow"
+  border_style: 1
+  outline: 2
   margin_v: 30
 
 # ----------------------------------------------------------

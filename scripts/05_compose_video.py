@@ -28,19 +28,42 @@ def load_config():
         return yaml.safe_load(f)
 
 
+def get_media_duration(path):
+    """用 ffprobe 获取媒体文件时长（秒）"""
+    result = subprocess.run(
+        [
+            FFPROBE, "-v", "quiet",
+            "-show_entries", "format=duration",
+            "-of", "default=noprint_wrappers=1:nokey=1",
+            str(path),
+        ],
+        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10,
+    )
+    try:
+        return float(result.stdout.strip())
+    except ValueError:
+        return None
+
+
 def merge_audio_video_scene(video_path, audio_path, output_path):
-    """合并单个场景的音频和视频，以音频时长为准"""
+    """合并单个场景的音频和视频，以音频时长为准重新编码视频"""
+    audio_duration = get_media_duration(audio_path)
+    if audio_duration is None:
+        audio_duration = get_media_duration(video_path) or 5.0
+
     cmd = [
         FFMPEG, "-y",
         "-i", str(video_path),
         "-i", str(audio_path),
-        "-c:v", "copy",
+        "-t", str(audio_duration),
+        "-c:v", "libx264",
         "-c:a", "aac",
-        "-shortest",
+        "-pix_fmt", "yuv420p",
+        "-preset", "fast",
         str(output_path),
     ]
 
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+    result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
     if result.returncode != 0:
         raise RuntimeError(f"音画合并失败: {result.stderr[-200:]}")
 
@@ -82,7 +105,7 @@ def concat_simple(video_files, output_path):
         str(output_path),
     ]
 
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+    result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300)
 
     # 清理临时文件
     list_file.unlink(missing_ok=True)
@@ -112,7 +135,7 @@ def concat_with_crossfade(video_files, output_path, fade_duration, video_config)
                 "-of", "default=noprint_wrappers=1:nokey=1",
                 str(vf),
             ],
-            capture_output=True, text=True, timeout=10,
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10,
         )
         try:
             durations.append(float(result.stdout.strip()))
@@ -139,7 +162,7 @@ def concat_with_crossfade(video_files, output_path, fade_duration, video_config)
             "-pix_fmt", "yuv420p",
             str(output_path),
         ]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300)
         if result.returncode != 0:
             logger.warning(f"Crossfade 失败，退回简单拼接: {result.stderr[-200:]}")
             return concat_simple(video_files, output_path)
@@ -168,7 +191,7 @@ def concat_with_crossfade(video_files, output_path, fade_duration, video_config)
                         "-of", "default=noprint_wrappers=1:nokey=1",
                         str(current_files[i]),
                     ],
-                    capture_output=True, text=True, timeout=10,
+                    capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10,
                 )
                 try:
                     d = float(r.stdout.strip())
@@ -190,7 +213,7 @@ def concat_with_crossfade(video_files, output_path, fade_duration, video_config)
                     "-pix_fmt", "yuv420p",
                     str(temp_out),
                 ]
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+                result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300)
                 if result.returncode != 0:
                     # 降级为简单拼接
                     logger.warning("Crossfade 步骤失败，降级为简单拼接")

@@ -18,11 +18,16 @@ assets/audio/
 assets/images/
 assets/video/
 assets/subtitles/
+assets/reference_images/
 assets/storyboard.json
 
 # 输出产物
 output/
 workspace/
+
+# 输入小说原文（版权内容，不提交）
+input/十日终焉/
+input/*.txt
 
 # 测试/缓存
 .pytest_cache/

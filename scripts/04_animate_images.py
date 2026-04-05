@@ -47,7 +47,7 @@ def get_audio_duration(audio_path):
                     "-of", "default=noprint_wrappers=1:nokey=1",
                     str(audio_path),
                 ],
-                capture_output=True, text=True, timeout=10,
+                capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10,
             )
             return float(result.stdout.strip())
         except Exception:
@@ -135,7 +135,7 @@ def animate_image_ffmpeg(image_path, output_path, duration, motion_type, intensi
 
     result = subprocess.run(
         cmd,
-        capture_output=True, text=True,
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
         timeout=120,
     )
 
@@ -213,8 +213,8 @@ def animate_all_images(storyboard_path=None, audio_dir=None, image_dir=None, out
         else:
             duration = scene.get("estimated_duration", 5)
 
-        # 确保最小时长
-        duration = max(duration, 1.0)
+        # 确保最小时长，加 0.1s buffer 防止视频比音频短
+        duration = max(duration, 1.0) + 0.1
 
         # 确定运动类型
         shot_type = scene["visual"].get("shot", "medium")

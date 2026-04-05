@@ -26,57 +26,127 @@ def load_config():
         return yaml.safe_load(f)
 
 
+def get_audio_duration(audio_path):
+    """获取音频文件实际时长（秒）"""
+    import wave
+    try:
+        with wave.open(str(audio_path), "rb") as wf:
+            return wf.getnframes() / wf.getframerate()
+    except Exception:
+        pass
+    try:
+        result = subprocess.run(
+            [
+                FFPROBE, "-v", "quiet",
+                "-show_entries", "format=duration",
+                "-of", "default=noprint_wrappers=1:nokey=1",
+                str(audio_path),
+            ],
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10,
+        )
+        return float(result.stdout.strip())
+    except Exception:
+        return None
+
+
+# 单行字幕最大字符数（超过则按标点切分）
+MAX_LINE_CHARS = 20
+
+
+def split_text_to_lines(text, max_chars=MAX_LINE_CHARS):
+    """
+    将长句按标点切分为多个短片段，每段不超过 max_chars 个字符。
+    切分点优先选标点符号，保证每段都是完整的语义单元。
+    返回片段列表。
+    """
+    import re
+    if len(text) <= max_chars:
+        return [text]
+
+    # 优先在这些标点后切分
+    break_chars = set("，。！？；：、…—,!?;:")
+    segments = []
+    current = ""
+
+    for ch in text:
+        current += ch
+        if ch in break_chars and len(current) >= 6:
+            segments.append(current)
+            current = ""
+
+    if current:
+        # 剩余部分：若上一段存在且合并后不超限，则合并
+        if segments and len(segments[-1]) + len(current) <= max_chars:
+            segments[-1] += current
+        else:
+            segments.append(current)
+
+    # 二次检查：仍超长的段强制按 max_chars 截断
+    result = []
+    for seg in segments:
+        while len(seg) > max_chars:
+            result.append(seg[:max_chars])
+            seg = seg[max_chars:]
+        if seg:
+            result.append(seg)
+
+    return result if result else [text]
+
+
 def generate_srt_from_storyboard(storyboard_path, audio_dir, output_srt_path):
     """
     方案 A：直接从 storyboard + 音频时长生成 SRT（不需要 Whisper）
-    精度足够，且不依赖额外模型。
-    """
-    import wave
 
+    时间戳基于每个场景音频的实际时长累加，并扣除 crossfade 转场重叠时间。
+    长句按标点切分为多个短片段，时间戳按字数比例分配，保证单行显示且音画同步。
+    """
     with open(storyboard_path, "r", encoding="utf-8") as f:
         storyboard = json.load(f)
+
+    # 读取 crossfade 转场时长（与 05_compose_video.py 保持一致）
+    config_path = PROJECT_ROOT / "config" / "pipeline.yaml"
+    with open(config_path, "r", encoding="utf-8") as f:
+        import yaml as _yaml
+        pipeline_cfg = _yaml.safe_load(f)
+    video_cfg = pipeline_cfg.get("video", {})
+    transition = video_cfg.get("transition", "none")
+    fade_duration = video_cfg.get("transition_duration", 0.5) if transition != "none" else 0.0
 
     srt_entries = []
     current_time = 0.0
 
-    for scene in storyboard["scenes"]:
+    for i, scene in enumerate(storyboard["scenes"]):
         scene_id = scene["scene_id"]
         text = scene["text"]
         audio_path = Path(audio_dir) / f"scene_{scene_id:03d}.wav"
 
-        # 获取音频时长
-        if audio_path.exists():
-            try:
-                with wave.open(str(audio_path), "rb") as wf:
-                    duration = wf.getnframes() / wf.getframerate()
-            except Exception:
-                try:
-                    result = subprocess.run(
-                        [
-                            FFPROBE, "-v", "quiet",
-                            "-show_entries", "format=duration",
-                            "-of", "default=noprint_wrappers=1:nokey=1",
-                            str(audio_path),
-                        ],
-                        capture_output=True, text=True, timeout=10,
-                    )
-                    duration = float(result.stdout.strip())
-                except Exception:
-                    duration = scene.get("estimated_duration", 5)
-        else:
+        duration = get_audio_duration(audio_path) if audio_path.exists() else None
+        if duration is None:
             duration = scene.get("estimated_duration", 5)
 
-        start_time = current_time
-        end_time = current_time + duration
+        # 将长句切分为单行片段，按字数比例分配时间
+        segments = split_text_to_lines(text)
+        total_chars = sum(len(s) for s in segments)
+        seg_start = current_time
 
-        srt_entries.append({
-            "index": len(srt_entries) + 1,
-            "start": start_time,
-            "end": end_time,
-            "text": text,
-        })
+        for seg in segments:
+            seg_ratio = len(seg) / total_chars if total_chars > 0 else 1.0 / len(segments)
+            seg_duration = duration * seg_ratio
+            seg_end = seg_start + seg_duration
 
-        current_time = end_time
+            srt_entries.append({
+                "index": len(srt_entries) + 1,
+                "start": seg_start,
+                "end": seg_end,
+                "text": seg,
+            })
+            seg_start = seg_end
+
+        # 下一场景起始时间：扣除 crossfade 重叠
+        if i < len(storyboard["scenes"]) - 1:
+            current_time = current_time + duration - fade_duration
+        else:
+            current_time = current_time + duration
 
     # 写入 SRT 文件
     output_srt_path = Path(output_srt_path)
@@ -155,9 +225,10 @@ def burn_subtitles(video_path, srt_path, output_path, config):
     # 方案 1：带样式的字幕
     force_style = (
         f"FontSize={font_size},"
-        f"PrimaryColour=&H00FFFFFF,"
+        f"PrimaryColour=&H0000FFFF,"
         f"OutlineColour=&H00000000,"
-        f"BorderStyle=3,Outline=1,Shadow=0,"
+        f"BorderStyle=1,Outline=2,Shadow=0,"
+        f"WrapStyle=2,"
         f"MarginV={margin_v}"
     )
     subtitle_filter = f"subtitles={srt_escaped}:force_style='{force_style}'"
@@ -173,7 +244,7 @@ def burn_subtitles(video_path, srt_path, output_path, config):
     ]
 
     logger.debug(f"字幕命令: {' '.join(cmd)}")
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+    result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600)
 
     if result.returncode != 0:
         logger.warning(f"带样式字幕烧录失败，尝试简单模式...")
@@ -193,7 +264,7 @@ def burn_subtitles(video_path, srt_path, output_path, config):
             str(output_path),
         ]
         result = subprocess.run(
-            cmd_simple, capture_output=True, text=True, timeout=600,
+            cmd_simple, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600,
             cwd=str(Path(video_path).parent),
         )
         temp_srt.unlink(missing_ok=True)

@@ -150,6 +150,11 @@ def main():
         help="使用 Whisper 生成字幕（默认使用 storyboard 方案）",
     )
     parser.add_argument(
+        "--no-subtitle",
+        action="store_true",
+        help="不生成字幕",
+    )
+    parser.add_argument(
         "--resume",
         type=str,
         default=None,
@@ -350,7 +355,9 @@ def main():
         ctx.mark_step_complete("compose", [composed_video])
 
     # ========== 阶段 6: 字幕生成 & 烧录 ==========
-    if args.resume and ctx.is_step_complete("subtitles"):
+    if args.no_subtitle:
+        logger.info("跳过阶段 6 (用户选择不生成字幕)")
+    elif args.resume and ctx.is_step_complete("subtitles"):
         logger.info("跳过阶段 6 (已完成 --resume)")
     else:
         mod = load_script("06_generate_subtitles.py")
