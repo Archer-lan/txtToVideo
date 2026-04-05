@@ -17,10 +17,11 @@ import os
 import sys
 import re
 import logging
-import yaml
 import chardet
 from pathlib import Path
 from openai import OpenAI
+
+from scripts.config_manager import ConfigManager
 
 logger = logging.getLogger(__name__)
 
@@ -83,9 +84,7 @@ SYSTEM_PROMPT = """你是一个专业的影视分镜脚本师。你的任务是�
 
 def load_config():
     """加载 pipeline 配置"""
-    config_path = PROJECT_ROOT / "config" / "pipeline.yaml"
-    with open(config_path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+    return ConfigManager().pipeline
 
 
 def create_llm_client(config):
@@ -263,14 +262,14 @@ def parse_story(input_path, output_path=None):
 
     Args:
         input_path: 小说文本文件路径
-        output_path: 输出 JSON 路径（默认 assets/storyboard.json）
+        output_path: 输出 JSON 路径（默认 workspace/storyboard.json）
 
     Returns:
         storyboard dict
     """
     input_path = Path(input_path)
     if output_path is None:
-        output_path = PROJECT_ROOT / "assets" / "storyboard.json"
+        output_path = PROJECT_ROOT / "workspace" / "storyboard.json"
     else:
         output_path = Path(output_path)
 

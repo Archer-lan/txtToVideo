@@ -14,10 +14,10 @@ import os
 import sys
 import subprocess
 import logging
-import yaml
 import wave
 from pathlib import Path
 from scripts.platform_utils import FFMPEG, FFPROBE
+from scripts.config_manager import ConfigManager
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +25,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 def load_config():
-    config_path = PROJECT_ROOT / "config" / "pipeline.yaml"
-    with open(config_path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+    return ConfigManager().pipeline
 
 
 def get_audio_duration(audio_path):
@@ -160,22 +158,22 @@ def animate_all_images(storyboard_path=None, audio_dir=None, image_dir=None, out
         生成的视频片段路径列表
     """
     if storyboard_path is None:
-        storyboard_path = PROJECT_ROOT / "assets" / "storyboard.json"
+        storyboard_path = PROJECT_ROOT / "workspace" / "storyboard.json"
     else:
         storyboard_path = Path(storyboard_path)
 
     if audio_dir is None:
-        audio_dir = PROJECT_ROOT / "assets" / "audio"
+        audio_dir = PROJECT_ROOT / "workspace" / "audio"
     else:
         audio_dir = Path(audio_dir)
 
     if image_dir is None:
-        image_dir = PROJECT_ROOT / "assets" / "images"
+        image_dir = PROJECT_ROOT / "workspace" / "images"
     else:
         image_dir = Path(image_dir)
 
     if output_dir is None:
-        output_dir = PROJECT_ROOT / "assets" / "video"
+        output_dir = PROJECT_ROOT / "workspace" / "video"
     else:
         output_dir = Path(output_dir)
 

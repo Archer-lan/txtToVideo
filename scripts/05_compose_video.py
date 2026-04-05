@@ -9,13 +9,14 @@
 
 import json
 import os
+import shutil
 import sys
 import subprocess
 import logging
-import yaml
 import tempfile
 from pathlib import Path
 from scripts.platform_utils import FFMPEG, FFPROBE
+from scripts.config_manager import ConfigManager
 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +24,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 def load_config():
-    config_path = PROJECT_ROOT / "config" / "pipeline.yaml"
-    with open(config_path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+    return ConfigManager().pipeline
 
 
 def get_media_duration(path):
@@ -120,7 +119,6 @@ def concat_with_crossfade(video_files, output_path, fade_duration, video_config)
     """带 crossfade 转场的拼接"""
     if len(video_files) == 1:
         # 只有一个视频，直接拷贝
-        import shutil
         shutil.copy2(video_files[0], output_path)
         return output_path
 
@@ -217,7 +215,6 @@ def concat_with_crossfade(video_files, output_path, fade_duration, video_config)
                 if result.returncode != 0:
                     # 降级为简单拼接
                     logger.warning("Crossfade 步骤失败，降级为简单拼接")
-                    import shutil
                     for f in temp_dir.iterdir():
                         f.unlink()
                     temp_dir.rmdir()
@@ -231,7 +228,6 @@ def concat_with_crossfade(video_files, output_path, fade_duration, video_config)
         step += 1
 
     # 最终结果
-    import shutil
     shutil.move(str(current_files[0]), str(output_path))
 
     # 清理临时文件
@@ -256,22 +252,22 @@ def compose_video(storyboard_path=None, audio_dir=None, video_dir=None, output_p
         输出视频路径
     """
     if storyboard_path is None:
-        storyboard_path = PROJECT_ROOT / "assets" / "storyboard.json"
+        storyboard_path = PROJECT_ROOT / "workspace" / "storyboard.json"
     else:
         storyboard_path = Path(storyboard_path)
 
     if audio_dir is None:
-        audio_dir = PROJECT_ROOT / "assets" / "audio"
+        audio_dir = PROJECT_ROOT / "workspace" / "audio"
     else:
         audio_dir = Path(audio_dir)
 
     if video_dir is None:
-        video_dir = PROJECT_ROOT / "assets" / "video"
+        video_dir = PROJECT_ROOT / "workspace" / "video"
     else:
         video_dir = Path(video_dir)
 
     if output_path is None:
-        output_path = PROJECT_ROOT / "assets" / "video" / "composed_no_sub.mp4"
+        output_path = PROJECT_ROOT / "workspace" / "video" / "composed_no_sub.mp4"
     else:
         output_path = Path(output_path)
 
@@ -300,7 +296,6 @@ def compose_video(storyboard_path=None, audio_dir=None, video_dir=None, output_p
 
         if not audio_clip.exists():
             logger.warning(f"音频不存在: {audio_clip}，使用无音频视频")
-            import shutil
             shutil.copy2(video_clip, merged_clip)
             merged_files.append(merged_clip)
             continue
@@ -311,7 +306,6 @@ def compose_video(storyboard_path=None, audio_dir=None, video_dir=None, output_p
             merged_files.append(merged_clip)
         except Exception as e:
             logger.error(f"  合并失败: {e}，使用无音频视频")
-            import shutil
             shutil.copy2(video_clip, merged_clip)
             merged_files.append(merged_clip)
 

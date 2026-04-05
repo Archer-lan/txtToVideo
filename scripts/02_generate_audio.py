@@ -12,10 +12,11 @@ import os
 import sys
 import logging
 import wave
-import yaml
 import time
 import uuid
 from pathlib import Path
+
+from scripts.config_manager import ConfigManager
 
 logger = logging.getLogger(__name__)
 
@@ -38,15 +39,11 @@ MESSAGE_COMPRESSION_GZIP = 0b0001
 
 
 def load_config():
-    config_path = PROJECT_ROOT / "config" / "pipeline.yaml"
-    with open(config_path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+    return ConfigManager().pipeline
 
 
 def load_characters():
-    char_path = PROJECT_ROOT / "config" / "characters.yaml"
-    with open(char_path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+    return ConfigManager().characters
 
 
 def get_voice_config(speaker, emotion, characters):
@@ -240,12 +237,12 @@ def generate_all_audio(storyboard_path=None, output_dir=None):
         生成的音频文件路径列表
     """
     if storyboard_path is None:
-        storyboard_path = PROJECT_ROOT / "assets" / "storyboard.json"
+        storyboard_path = PROJECT_ROOT / "workspace" / "storyboard.json"
     else:
         storyboard_path = Path(storyboard_path)
 
     if output_dir is None:
-        output_dir = PROJECT_ROOT / "assets" / "audio"
+        output_dir = PROJECT_ROOT / "workspace" / "audio"
     else:
         output_dir = Path(output_dir)
 

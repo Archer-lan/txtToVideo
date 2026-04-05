@@ -7,13 +7,15 @@
 
 import json
 import os
-import sys
+import re
+import shutil
 import subprocess
 import logging
-import yaml
+import wave
 from pathlib import Path
 
 from scripts.platform_utils import get_ffmpeg_subtitle_path, FFMPEG, FFPROBE
+from scripts.config_manager import ConfigManager
 
 logger = logging.getLogger(__name__)
 
@@ -21,14 +23,11 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 def load_config():
-    config_path = PROJECT_ROOT / "config" / "pipeline.yaml"
-    with open(config_path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+    return ConfigManager().pipeline
 
 
 def get_audio_duration(audio_path):
     """获取音频文件实际时长（秒）"""
-    import wave
     try:
         with wave.open(str(audio_path), "rb") as wf:
             return wf.getnframes() / wf.getframerate()
@@ -59,7 +58,6 @@ def split_text_to_lines(text, max_chars=MAX_LINE_CHARS):
     切分点优先选标点符号，保证每段都是完整的语义单元。
     返回片段列表。
     """
-    import re
     if len(text) <= max_chars:
         return [text]
 
@@ -104,10 +102,7 @@ def generate_srt_from_storyboard(storyboard_path, audio_dir, output_srt_path):
         storyboard = json.load(f)
 
     # 读取 crossfade 转场时长（与 05_compose_video.py 保持一致）
-    config_path = PROJECT_ROOT / "config" / "pipeline.yaml"
-    with open(config_path, "r", encoding="utf-8") as f:
-        import yaml as _yaml
-        pipeline_cfg = _yaml.safe_load(f)
+    pipeline_cfg = ConfigManager().pipeline
     video_cfg = pipeline_cfg.get("video", {})
     transition = video_cfg.get("transition", "none")
     fade_duration = video_cfg.get("transition_duration", 0.5) if transition != "none" else 0.0
@@ -251,7 +246,6 @@ def burn_subtitles(video_path, srt_path, output_path, config):
         logger.debug(f"FFmpeg stderr: {result.stderr[-300:]}")
 
         # 方案 2：将 SRT 复制到视频同目录，用相对路径
-        import shutil
         temp_srt = Path(video_path).parent / "subs.srt"
         shutil.copy2(srt_path, temp_srt)
 
@@ -305,22 +299,22 @@ def generate_subtitles(
         最终视频路径
     """
     if storyboard_path is None:
-        storyboard_path = PROJECT_ROOT / "assets" / "storyboard.json"
+        storyboard_path = PROJECT_ROOT / "workspace" / "storyboard.json"
     else:
         storyboard_path = Path(storyboard_path)
 
     if audio_dir is None:
-        audio_dir = PROJECT_ROOT / "assets" / "audio"
+        audio_dir = PROJECT_ROOT / "workspace" / "audio"
     else:
         audio_dir = Path(audio_dir)
 
     if video_path is None:
-        video_path = PROJECT_ROOT / "assets" / "video" / "composed_no_sub.mp4"
+        video_path = PROJECT_ROOT / "workspace" / "video" / "composed_no_sub.mp4"
     else:
         video_path = Path(video_path)
 
     config = load_config()
-    srt_path = PROJECT_ROOT / "assets" / "subtitles" / "chapter.srt"
+    srt_path = PROJECT_ROOT / "workspace" / "subtitles" / "chapter.srt"
 
     # 生成 SRT
     if use_whisper:

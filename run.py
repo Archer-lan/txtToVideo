@@ -23,6 +23,12 @@ import time
 import traceback
 from pathlib import Path
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 from scripts.cleanup import ArtifactCleaner
 from scripts.config_manager import ConfigManager
 from scripts.migrate import migrate_assets_to_workspace

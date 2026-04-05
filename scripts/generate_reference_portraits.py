@@ -14,9 +14,11 @@ import yaml
 import requests
 from pathlib import Path
 
+from scripts.config_manager import ConfigManager
+
 logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-API_URL = "http://127.0.0.1:7860"
+SD_API_URL = os.environ.get("SD_API_URL", "http://127.0.0.1:7860")
 
 
 def generate_portrait(character_name, appearance, output_path, style_config):
@@ -70,7 +72,7 @@ def generate_portrait(character_name, appearance, output_path, style_config):
         },
     }
 
-    resp = requests.post(f"{API_URL}/sdapi/v1/txt2img", json=payload, timeout=300)
+    resp = requests.post(f"{SD_API_URL}/sdapi/v1/txt2img", json=payload, timeout=300)
     resp.raise_for_status()
     img_data = base64.b64decode(resp.json()["images"][0])
 
@@ -84,12 +86,10 @@ def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
     # 加载配置
-    with open(PROJECT_ROOT / "config" / "characters.yaml", "r", encoding="utf-8") as f:
-        characters = yaml.safe_load(f)
-    with open(PROJECT_ROOT / "config" / "styles.yaml", "r", encoding="utf-8") as f:
-        styles = yaml.safe_load(f)
-    with open(PROJECT_ROOT / "config" / "pipeline.yaml", "r", encoding="utf-8") as f:
-        pipeline = yaml.safe_load(f)
+    cfg = ConfigManager()
+    characters = cfg.characters
+    styles = cfg.styles
+    pipeline = cfg.pipeline
 
     style_name = pipeline["image"]["style"]
     style_config = styles["styles"][style_name]
@@ -99,7 +99,7 @@ def main():
 
     # 检查 SD 可用性
     try:
-        r = requests.get(f"{API_URL}/sdapi/v1/sd-models", timeout=5)
+        r = requests.get(f"{SD_API_URL}/sdapi/v1/sd-models", timeout=5)
         r.raise_for_status()
         logger.info("SD WebUI 已连接")
     except Exception as e:
