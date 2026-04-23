@@ -22,10 +22,6 @@ logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
-def load_config():
-    config_path = PROJECT_ROOT / "config" / "pipeline.yaml"
-    with open(config_path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
 
 
 def get_media_duration(path):
@@ -242,7 +238,7 @@ def concat_with_crossfade(video_files, output_path, fade_duration, video_config)
     return output_path
 
 
-def compose_video(storyboard_path=None, audio_dir=None, video_dir=None, output_path=None):
+def compose_video(storyboard_path=None, audio_dir=None, video_dir=None, output_path=None, config_manager=None):
     """
     主函数：合成完整视频（无字幕）
 
@@ -251,10 +247,17 @@ def compose_video(storyboard_path=None, audio_dir=None, video_dir=None, output_p
         audio_dir: 音频目录
         video_dir: 动画视频片段目录
         output_path: 输出视频路径
+        config_manager: ConfigManager 实例（可选，不传则自建）
 
     Returns:
         输出视频路径
     """
+    if config_manager is None:
+        from scripts.config_manager import ConfigManager
+        config_manager = ConfigManager()
+
+    config = config_manager.pipeline
+
     if storyboard_path is None:
         storyboard_path = PROJECT_ROOT / "assets" / "storyboard.json"
     else:
@@ -280,8 +283,6 @@ def compose_video(storyboard_path=None, audio_dir=None, video_dir=None, output_p
     logger.info(f"读取分镜脚本: {storyboard_path}")
     with open(storyboard_path, "r", encoding="utf-8") as f:
         storyboard = json.load(f)
-
-    config = load_config()
 
     # 第一步：为每个场景合并音视频
     merged_dir = video_dir / "_merged"

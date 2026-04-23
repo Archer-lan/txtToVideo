@@ -24,10 +24,6 @@ logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
-def load_config():
-    config_path = PROJECT_ROOT / "config" / "pipeline.yaml"
-    with open(config_path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
 
 
 def get_audio_duration(audio_path):
@@ -146,7 +142,7 @@ def animate_image_ffmpeg(image_path, output_path, duration, motion_type, intensi
     return output_path
 
 
-def animate_all_images(storyboard_path=None, audio_dir=None, image_dir=None, output_dir=None):
+def animate_all_images(storyboard_path=None, audio_dir=None, image_dir=None, output_dir=None, config_manager=None):
     """
     主函数：为所有场景图片添加 Ken Burns 动画
 
@@ -155,10 +151,19 @@ def animate_all_images(storyboard_path=None, audio_dir=None, image_dir=None, out
         audio_dir: 音频目录（用于获取时长）
         image_dir: 图片目录
         output_dir: 视频片段输出目录
+        config_manager: ConfigManager 实例（可选，不传则自建）
 
     Returns:
         生成的视频片段路径列表
     """
+    if config_manager is None:
+        from scripts.config_manager import ConfigManager
+        config_manager = ConfigManager()
+
+    config = config_manager.pipeline
+    anim_config = config["animation"]
+    video_config = config["video"]
+
     if storyboard_path is None:
         storyboard_path = PROJECT_ROOT / "assets" / "storyboard.json"
     else:
@@ -184,10 +189,6 @@ def animate_all_images(storyboard_path=None, audio_dir=None, image_dir=None, out
     logger.info(f"读取分镜脚本: {storyboard_path}")
     with open(storyboard_path, "r", encoding="utf-8") as f:
         storyboard = json.load(f)
-
-    config = load_config()
-    anim_config = config["animation"]
-    video_config = config["video"]
 
     fps = anim_config["fps"]
     default_motion = anim_config["default_motion"]

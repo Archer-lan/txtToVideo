@@ -8,9 +8,13 @@
 from pathlib import Path
 
 import yaml
+from dotenv import load_dotenv
 
 # scripts/ 的上一级即项目根目录
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+# 加载 .env 文件（在项目根目录查找）
+load_dotenv(PROJECT_ROOT / ".env")
 
 
 class ConfigManager:

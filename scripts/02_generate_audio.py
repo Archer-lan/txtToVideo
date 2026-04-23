@@ -12,7 +12,6 @@ import os
 import sys
 import logging
 import wave
-import yaml
 import time
 import uuid
 from pathlib import Path
@@ -35,18 +34,6 @@ MESSAGE_SERIAL_NEG = 0b0010
 MESSAGE_SERIAL_FINISH = 0b0011
 MESSAGE_COMPRESSION_NONE = 0b0000
 MESSAGE_COMPRESSION_GZIP = 0b0001
-
-
-def load_config():
-    config_path = PROJECT_ROOT / "config" / "pipeline.yaml"
-    with open(config_path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
-
-
-def load_characters():
-    char_path = PROJECT_ROOT / "config" / "characters.yaml"
-    with open(char_path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
 
 
 def get_voice_config(speaker, emotion, characters):
@@ -228,17 +215,25 @@ def generate_audio_fallback(text, voice_type, prosody, config, output_path):
         return output_path
 
 
-def generate_all_audio(storyboard_path=None, output_dir=None):
+def generate_all_audio(storyboard_path=None, output_dir=None, config_manager=None):
     """
     主函数：为所有场景生成音频
 
     Args:
         storyboard_path: storyboard.json 路径
         output_dir: 音频输出目录
+        config_manager: ConfigManager 实例（可选，不传则自建）
 
     Returns:
         生成的音频文件路径列表
     """
+    if config_manager is None:
+        from scripts.config_manager import ConfigManager
+        config_manager = ConfigManager()
+
+    config = config_manager.pipeline
+    characters = config_manager.characters
+
     if storyboard_path is None:
         storyboard_path = PROJECT_ROOT / "assets" / "storyboard.json"
     else:
@@ -254,9 +249,6 @@ def generate_all_audio(storyboard_path=None, output_dir=None):
     logger.info(f"读取分镜脚本: {storyboard_path}")
     with open(storyboard_path, "r", encoding="utf-8") as f:
         storyboard = json.load(f)
-
-    config = load_config()
-    characters = load_characters()
 
     audio_files = []
     use_volcano = bool(

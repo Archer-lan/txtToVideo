@@ -284,10 +284,15 @@ def main():
             mod.parse_story,
             input_path,
             storyboard_path,
+            cfg,
         )
         ctx.mark_step_complete("parse", [storyboard_path])
     else:
         logger.info("跳过阶段 1 (--skip-parse)")
+
+    # ========== 角色检测 ==========
+    from scripts.character_detector import check_and_warn_characters
+    check_and_warn_characters(storyboard_path, cfg.characters, logger)
 
     # ========== 阶段 2: 分镜 → 音频 ==========
     if args.resume and ctx.is_step_complete("audio"):
@@ -299,6 +304,7 @@ def main():
             mod.generate_all_audio,
             storyboard_path,
             audio_dir,
+            cfg,
         )
         audio_artifacts = list(audio_dir.glob("*.wav"))
         ctx.mark_step_complete("audio", audio_artifacts)
@@ -315,6 +321,7 @@ def main():
             mod.generate_all_images,
             storyboard_path,
             image_dir,
+            cfg,
         )
         image_artifacts = list(image_dir.glob("*.png"))
         ctx.mark_step_complete("images", image_artifacts)
@@ -333,6 +340,7 @@ def main():
             audio_dir,
             image_dir,
             video_dir,
+            cfg,
         )
         animate_artifacts = list(video_dir.glob("scene_*.mp4"))
         ctx.mark_step_complete("animate", animate_artifacts)
@@ -351,6 +359,7 @@ def main():
             audio_dir,
             video_dir,
             composed_video,
+            cfg,
         )
         ctx.mark_step_complete("compose", [composed_video])
 
@@ -369,6 +378,7 @@ def main():
             composed_video,
             output_path,
             args.whisper,
+            cfg,
         )
         ctx.mark_step_complete("subtitles", [output_path])
 

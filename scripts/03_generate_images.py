@@ -22,21 +22,6 @@ logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
-def load_config():
-    config_path = PROJECT_ROOT / "config" / "pipeline.yaml"
-    with open(config_path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
-
-
-def load_styles():
-    style_path = PROJECT_ROOT / "config" / "styles.yaml"
-    with open(style_path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
-
-def load_characters():
-    char_path = PROJECT_ROOT / "config" / "characters.yaml"
-    with open(char_path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
 
 
 
@@ -61,16 +46,13 @@ def build_sd_prompt(scene, styles_config, style_name, characters_config=None, pr
             appearance = character["appearance"]
 
     # 从前序场景提取环境/背景锚点，避免场景跳变
-    # 提取前一场景 prompt 中的地点关键词（名词短语），作为背景一致性提示
+    # 在场景 ID 连续时注入，不再要求情绪一致
     location_anchor = ""
     if prev_scene is not None:
-        prev_prompt = prev_scene["visual"].get("prompt", "")
-        # 取前一场景 prompt 的前半部分作为背景锚（通常是地点描述）
-        # 只在同一情绪/地点连续时注入，避免强行拼接不相关场景
-        prev_emotion = prev_scene.get("emotion", "")
-        curr_emotion = scene.get("emotion", "")
-        if prev_emotion == curr_emotion and prev_prompt:
-            # 提取前一场景的背景描述（取前20个词）
+        prev_id = prev_scene.get("scene_id", 0)
+        curr_id = scene.get("scene_id", 0)
+        if curr_id - prev_id == 1:  # 连续场景
+            prev_prompt = prev_scene["visual"].get("prompt", "")
             prev_words = prev_prompt.split(",")[0].strip()  # 取第一个逗号前的主体描述
             if prev_words and len(prev_words) < 80:
                 location_anchor = f"same location as previous scene: {prev_words}"
@@ -422,13 +404,21 @@ def _choose_denoising_strength(prev_scene, curr_scene, consecutive_img2img_count
     return min(base + boost, 0.75)
 
 
-def generate_all_images(storyboard_path=None, output_dir=None):
+def generate_all_images(storyboard_path=None, output_dir=None, config_manager=None):
     """
     主函数：为所有场景生成画面。
     每张图独立 txt2img 生成，通过共享 seed 保持同一地点连续场景的风格一致性，
     场景切换时更换 seed。每张图的 prompt 不同，确保人物动作/表情随剧情变化。
     """
     import random
+
+    if config_manager is None:
+        from scripts.config_manager import ConfigManager
+        config_manager = ConfigManager()
+
+    config = config_manager.pipeline
+    styles_config = config_manager.styles
+    characters_config = config_manager.characters
 
     if storyboard_path is None:
         storyboard_path = PROJECT_ROOT / "assets" / "storyboard.json"
@@ -445,10 +435,6 @@ def generate_all_images(storyboard_path=None, output_dir=None):
     logger.info(f"读取分镜脚本: {storyboard_path}")
     with open(storyboard_path, "r", encoding="utf-8") as f:
         storyboard = json.load(f)
-
-    config = load_config()
-    styles_config = load_styles()
-    characters_config = load_characters()
 
     image_config = config["image"]
     style_name = image_config["style"]
